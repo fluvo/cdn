@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fluv Popup 使用範例</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+
+    .info-box {
+      background: #f5f5f5;
+      border-left: 4px solid #4CAF50;
+      padding: 15px;
+      margin: 20px 0;
+    }
+
+    .code-block {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      background: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: #45a049;
+    }
+
+    .btn-secondary {
+      background: #2196F3;
+    }
+
+    .btn-secondary:hover {
+      background: #0b7dda;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🎉 Fluv Popup System 使用範例</h1>
+
+  <div class="info-box">
+    <h2>📋 關於此頁面</h2>
+    <p>此頁面展示了 Fluv Popup System 的基本使用方式。系統已經自動載入，並會根據後台設定顯示彈窗。</p>
+  </div>
+
+  <h2>🚀 快速開始</h2>
+  <p>只需要在你的 HTML 頁面中加入以下程式碼：</p>
+
+  <div class="code-block">
+    &lt;!-- Fluv Popup System --&gt;<br>
+    &lt;script src="https://cdn.jsdelivr.net/gh/fluvo/cdn@main/fluv-popup.js"&gt;&lt;/script&gt;
+  </div>
+
+  <h2>🧪 測試功能</h2>
+  <p>點擊以下按鈕體驗不同的測試模式：</p>
+
+  <a href="?test" class="btn">啟用測試模式</a>
+  <a href="?" class="btn btn-secondary">正式模式</a>
+
+  <div class="warning">
+    <h3>⚠️ 測試模式說明</h3>
+    <p>
+      <strong>測試模式啟用條件：</strong>網址中包含任意查詢參數（例如：<code>?test</code>、<code>?debug</code>、<code>?preview</code>）
+    </p>
+    <p>
+      <strong>測試模式特性：</strong>
+    </p>
+    <ul>
+      <li>忽略 Cookie 檢查，每次重新整理都會顯示</li>
+      <li>顯示所有已啟用的 popup（包含未開始和已過期的）</li>
+      <li>Console 會輸出 popup 資料供開發者檢查</li>
+    </ul>
+  </div>
+
+  <h2>🌍 地區設定</h2>
+  <p>系統會根據以下順序自動偵測地區：</p>
+  <ol>
+    <li><strong>URL 路徑</strong>：<code>/tw/</code>（台灣）、<code>/jp/</code>（日本）、<code>/hk/</code>（香港）</li>
+    <li><strong>localStorage</strong>：<code>localStorage.getItem('region')</code></li>
+    <li><strong>預設值</strong>：台灣（1）</li>
+  </ol>
+
+  <div class="info-box">
+    <h3>💡 當前設定</h3>
+    <p>
+      <strong>當前地區：</strong><span id="current-region">載入中...</span><br>
+      <strong>測試模式：</strong><span id="test-mode">載入中...</span><br>
+      <strong>主機名稱：</strong><span id="hostname">載入中...</span>
+    </p>
+  </div>
+
+  <h2>📖 更多資訊</h2>
+  <p>詳細的使用說明請參考：</p>
+  <ul>
+    <li><a href="https://github.com/fluvo/cdn/blob/main/README.md" target="_blank">GitHub README</a></li>
+    <li><a href="https://github.com/fluvo/cdn" target="_blank">GitHub 倉庫</a></li>
+  </ul>
+
+  <script>
+    // 顯示當前設定
+    document.addEventListener('DOMContentLoaded', () => {
+      const detectRegionFromPath = () => {
+        const path = window.location.pathname.toLowerCase();
+        if (path.includes('/jp/')) return 2;
+        if (path.includes('/hk/')) return 3;
+        if (path.includes('/tw/')) return 1;
+        return 1;
+      };
+
+      const urlRegion = detectRegionFromPath();
+      const userRegion = urlRegion || Number(localStorage.getItem('region')) || 1;
+
+      const regionNames = {
+        1: '台灣 (TW)',
+        2: '日本 (JP)',
+        3: '香港 (HK)'
+      };
+
+      document.getElementById('current-region').textContent = regionNames[userRegion] || userRegion;
+
+      const isTestMode = new URLSearchParams(window.location.search).size >= 1;
+      document.getElementById('test-mode').textContent = isTestMode ? '✅ 已啟用' : '❌ 未啟用';
+
+      document.getElementById('hostname').textContent = window.location.hostname;
+    });
+  </script>
+
+  <!-- Fluv Popup System -->
+  <script src="https://cdn.jsdelivr.net/gh/fluvo/cdn@main/fluv-popup.js"></script>
+
+</body>
+
+</html>
