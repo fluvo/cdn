@@ -1,20 +1,27 @@
 /**
  * Fluv Popup System
  * @description 彈窗管理系統 - 支援圖片彈窗和 Email 收集彈窗
- * @version 2.0.0
+ * @version 2.1.0
  * @author Fluv Team
  */
 (function () {
   const hostname = window.location.hostname;
   const STORAGE_KEY = 'fluv_popup_closed';
+  const STORAGE_KEY_SUBMITTED = 'fluv_popup_submitted'; // Email 已提交記錄
 
   // 檢查是否應該顯示 popup（基於 localStorage）
   const checkIsShowPopup = (popup) => {
     if (!popup) return false;
-    const { popupLogic, id } = popup;
+    const { popupLogic, id, popupType } = popup;
 
-    // 從 localStorage 取得已關閉的 popup 記錄
+    // 從 localStorage 取得記錄
     const closedPopups = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const submittedPopups = JSON.parse(localStorage.getItem(STORAGE_KEY_SUBMITTED) || '{}');
+
+    // Email Collector 特殊邏輯：提交過就永不顯示
+    if (popupType === 'email-collector' && submittedPopups[id]) {
+      return false;
+    }
 
     if (popupLogic === 'show-once') {
       // 只顯示一次：如果已經關閉過，就不再顯示
@@ -32,11 +39,18 @@
     return true;
   };
 
-  // 標記 popup 為已關閉
+  // 標記 popup 為已關閉（點擊 X）
   const markPopupClosed = (popupId) => {
     const closedPopups = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     closedPopups[popupId] = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(closedPopups));
+  };
+
+  // 標記 Email 已提交（永不顯示）
+  const markEmailSubmitted = (popupId) => {
+    const submittedPopups = JSON.parse(localStorage.getItem(STORAGE_KEY_SUBMITTED) || '{}');
+    submittedPopups[popupId] = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY_SUBMITTED, JSON.stringify(submittedPopups));
   };
 
   const checkHostName = (hostname, popup) => {
@@ -51,9 +65,42 @@
     }
   };
 
+  // 檢查當前路徑是否在排除列表中
+  const checkExcludePaths = (pathname, popup) => {
+    if (!popup || !popup.excludePaths) return false;
+
+    // 將 excludePaths 字串分割成陣列，並清理空白
+    const excludePathsList = popup.excludePaths
+      .split(',')
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+
+    if (excludePathsList.length === 0) return false;
+
+    // 檢查當前路徑是否包含任何排除路徑（部分匹配）
+    return excludePathsList.some(excludePath => {
+      // 如果是完整網址，提取路徑部分
+      if (excludePath.startsWith('http://') || excludePath.startsWith('https://')) {
+        try {
+          const url = new URL(excludePath);
+          return pathname.includes(url.pathname);
+        } catch (e) {
+          return false;
+        }
+      }
+      // 否則直接用路徑匹配
+      return pathname.includes(excludePath);
+    });
+  };
+
   function getPopupForHost(popups, hostname) {
+    const pathname = window.location.pathname;
+
     const filtered = popups.filter(popup => {
+      // 檢查 hostname 是否允許
       if (!checkHostName(hostname, popup)) return false;
+      // 檢查當前路徑是否在排除列表中
+      if (checkExcludePaths(pathname, popup)) return false;
       return true;
     });
     if (filtered.length === 0) return null;
@@ -152,26 +199,33 @@
           const result = await response.json();
 
           if (result.success) {
-            markPopupClosed(popup.id);
+            // Email 提交成功，永不再顯示
+            markEmailSubmitted(popup.id);
 
             if (result.successAction === 'close') {
               hidePopup();
-              showReopenButton();
+              // Email 提交成功後不顯示 reopen 按鈕
             } else {
-              // 顯示成功訊息
+              // 顯示成功訊息（使用 SVG 打勾 icon）
+              const buttonColor = popup.buttonColor || '#79c7ce';
               const formContainer = document.getElementById('popup-form-container');
               if (formContainer) {
                 formContainer.innerHTML = `
                   <div style="text-align: center; padding: 20px;">
-                    <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
-                    <div style="font-size: 16px; color: #333;">${result.message}</div>
+                    <div style="margin-bottom: 16px;">
+                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" fill="${buttonColor}" opacity="0.15"/>
+                        <path d="M8 12.5L11 15.5L16 9.5" stroke="${buttonColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div style="font-size: 16px; color: #333; font-weight: 500;">${result.message}</div>
                   </div>
                 `;
               }
               // 3 秒後自動關閉
               setTimeout(() => {
                 hidePopup();
-                showReopenButton();
+                // Email 提交成功後不顯示 reopen 按鈕
               }, 3000);
             }
           } else {
@@ -280,7 +334,9 @@
   }
 
   function createEmailCollectorContent(popup) {
-    const { content, submitButtonText = '訂閱' } = popup;
+    const { image, submitButtonText = '訂閱', buttonColor = '#79c7ce' } = popup;
+    // 計算 hover 時的深色版本
+    const darkerColor = adjustColor(buttonColor, -20);
 
     return `
       <button id="close-popup" style="
@@ -309,15 +365,14 @@
       " alt="Popup Cat">
 
       <div id="popup-form-container" style="margin-top: 20px;">
-        <div style="
-          font-size: 16px;
-          line-height: 1.6;
-          color: #333;
-          margin-bottom: 20px;
-          white-space: pre-wrap;
-          text-align: left;
-          padding: 0 10px;
-        ">${content}</div>
+        ${image ? `
+          <img src="${image}" style="
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 16px;
+          " alt="Popup Image">
+        ` : ''}
 
         <form id="popup-email-form" style="display: flex; flex-direction: column; gap: 12px;">
           <input
@@ -333,7 +388,7 @@
               outline: none;
               transition: border-color 0.2s;
             "
-            onfocus="this.style.borderColor='#007bff'"
+            onfocus="this.style.borderColor='${buttonColor}'"
             onblur="this.style.borderColor='#ddd'"
           />
           <button
@@ -341,7 +396,7 @@
             id="popup-submit-btn"
             style="
               padding: 12px 24px;
-              background-color: #007bff;
+              background-color: ${buttonColor};
               color: white;
               border: none;
               border-radius: 8px;
@@ -349,12 +404,21 @@
               cursor: pointer;
               transition: background-color 0.2s;
             "
-            onmouseover="this.style.backgroundColor='#0056b3'"
-            onmouseout="this.style.backgroundColor='#007bff'"
+            onmouseover="this.style.backgroundColor='${darkerColor}'"
+            onmouseout="this.style.backgroundColor='${buttonColor}'"
           >${submitButtonText}</button>
         </form>
       </div>
     `;
+  }
+
+  // 調整顏色亮度
+  function adjustColor(color, amount) {
+    const hex = color.replace('#', '');
+    const r = Math.max(0, Math.min(255, parseInt(hex.substring(0, 2), 16) + amount));
+    const g = Math.max(0, Math.min(255, parseInt(hex.substring(2, 4), 16) + amount));
+    const b = Math.max(0, Math.min(255, parseInt(hex.substring(4, 6), 16) + amount));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
   function createReopenButton(popup) {
