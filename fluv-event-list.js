@@ -1,19 +1,10 @@
 /**
  * Fluv Event List System (WordPress)
  * @description 活動列表系統 - 支援活動卡片顯示、選單更新、地區篩選
- * @version 1.0.0
+ * @version 1.1.0
  * @author Fluv Team
  */
 (async function loadEventList() {
-  // ===== 0) 檢查 staging flag =====
-  const urlParams = new URLSearchParams(window.location.search);
-  const isTestMode = urlParams.has('test');
-
-  // 如果沒有 ?test 參數，直接返回不顯示活動列表
-  if (!isTestMode) {
-    return;
-  }
-
   // ===== 1) 隱藏舊的活動列表 =====
   const oldEventList = document.getElementById('old-event-list');
   if (oldEventList) {
