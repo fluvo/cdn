@@ -1,7 +1,7 @@
 /**
  * Fluv Event List System (WordPress)
- * @description 活動列表系統 - 支援活動卡片顯示、選單更新、地區篩選
- * @version 1.1.0
+ * @description 活動列表系統 - 支援選單更新（所有頁面）、活動卡片顯示（event-list 頁面）、地區篩選
+ * @version 2.3.0
  * @author Fluv Team
  */
 (async function loadEventList() {
@@ -11,29 +11,15 @@
     oldEventList.style.display = 'none';
   }
 
-  // ===== 2) 檢查是否在 event-list 頁面 =====
+  // ===== 2) 依網址判斷 region =====
   const path = location.pathname.toLowerCase();
-  const isEventListPage = path.includes('/event-list/') || path.endsWith('/event-list');
-
-  if (!isEventListPage) {
-    return;
-  }
-
-  // ===== 3) 依網址判斷 region =====
   let region =
     path.startsWith('/tw/') ? 1 :
     path.startsWith('/jp/') ? 2 :
     path.startsWith('/hk/') ? 3 :
     1; // 預設台灣
 
-  // ===== 4) 抓 DOM =====
-  const eventListContainer = document.getElementById('event-list');
-  if (!eventListContainer) {
-    console.warn('event-list container not found');
-    return;
-  }
-
-  // ===== 5) 工具：挑「目前有效」的所有活動 =====
+  // ===== 3) 工具：挑「目前有效」的所有活動 =====
   const pickActiveEvents = (events) => {
     const now = Date.now();
     const active = events.filter(e => {
@@ -47,7 +33,7 @@
     return active;
   };
 
-  // ===== 6) 取 API =====
+  // ===== 4) 取 API（所有頁面都會執行）=====
   let activeEvents = [];
   try {
     const res = await fetch(`https://api-prod.fluv.com/events?limit=100&region=${region}`, {
@@ -62,7 +48,7 @@
     console.warn('events fetch failed:', err);
   }
 
-  // ===== 7) 更新選單的 sub-menu =====
+  // ===== 5) 更新選單的 sub-menu（所有頁面都會執行）=====
   const eventMenuItem = document.getElementById('menu-item-11090');
   if (eventMenuItem && activeEvents.length > 0) {
     const subMenu = eventMenuItem.querySelector('.sub-menu');
@@ -85,6 +71,19 @@
         subMenu.appendChild(menuItem);
       });
     }
+  }
+
+  // ===== 6) 以下只在 event-list 頁面執行 =====
+  const isEventListPage = path.includes('/event-list/') || path.endsWith('/event-list');
+  if (!isEventListPage) {
+    return;
+  }
+
+  // ===== 7) 抓 event-list DOM =====
+  const eventListContainer = document.getElementById('event-list');
+  if (!eventListContainer) {
+    console.warn('event-list container not found');
+    return;
   }
 
   // ===== 8) 動態生成活動卡片（每行三個）=====
