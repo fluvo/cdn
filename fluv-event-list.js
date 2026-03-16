@@ -11,13 +11,37 @@
     oldEventList.style.display = 'none';
   }
 
-  // ===== 2) 依網址判斷 region =====
+  // ===== 2) 依網址判斷 region 與 language =====
   const path = location.pathname.toLowerCase();
   let region =
     path.startsWith('/tw/') ? 1 :
     path.startsWith('/jp/') ? 2 :
     path.startsWith('/hk/') ? 3 :
     1; // 預設台灣
+
+  // 語言偵測：優先讀明確的語言路徑片段，否則依 region 給預設語言
+  // 路徑結構：/{region-code}/{lang-code}/ 例如 /tw/zh-tw/ 或 /tw/en/
+  // 如需新增語言（如 /jp/ja/、/jp/en/），直接在此對應即可
+  const lang =
+    path.includes('/zh-tw/') ? 'zh-tw' :
+    path.includes('/zh-hk/') ? 'zh-hk' :
+    path.includes('/en/')    ? 'en'    :
+    path.includes('/ja/')    ? 'ja'    :
+    region === 2             ? 'ja'    : // 日本預設日文
+    region === 3             ? 'zh-hk' : // 香港預設繁中港
+    'zh-tw'; // 台灣預設繁中台
+
+  /**
+   * 從活動資料讀取指定欄位，支援新的 locales 結構與舊的 flat 結構
+   * 新格式：event.locales["zh-tw"].desktopImageLink
+   * 舊格式：event.desktopImageLink（向後相容）
+   */
+  const getField = (event, field) => {
+    if (event.locales && event.locales[lang] && event.locales[lang][field]) {
+      return event.locales[lang][field];
+    }
+    return event[field] || '';
+  };
 
   // ===== 3) 工具：挑「目前有效」的所有活動 =====
   const pickActiveEvents = (events) => {
@@ -62,9 +86,9 @@
         menuItem.className = 'menu-item menu-item-type-custom menu-item-object-custom';
 
         menuItem.innerHTML = `
-          <a href="${event.barUtmLink || event.eventPageUtmLink || '#'}" itemprop="url" target="_blank" rel="noopener">
+          <a href="${getField(event, 'barUtmLink') || getField(event, 'eventPageUtmLink') || '#'}" itemprop="url" target="_blank" rel="noopener">
             <span class="avia-bullet"></span>
-            <span class="avia-menu-text">${event.tabName || event.title || '優惠活動'}</span>
+            <span class="avia-menu-text">${getField(event, 'tabName') || getField(event, 'title') || '優惠活動'}</span>
           </a>
         `;
 
@@ -126,12 +150,12 @@
         <div class="avia_textblock" itemprop="text">
           <p>
             <img class="alignnone wp-image-11080 size-large"
-                 src="${event.mobileImageLink || ''}"
-                 alt="${event.title || '優惠活動'}"
+                 src="${getField(event, 'mobileImageLink')}"
+                 alt="${getField(event, 'title') || '優惠活動'}"
                  style="width: 100%; height: auto;">
           </p>
-          <h2>${event.title || '優惠活動'}</h2>
-          <p>${event.description || ''}</p>
+          <h2>${getField(event, 'title') || '優惠活動'}</h2>
+          <p>${getField(event, 'description')}</p>
           <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
             <strong>活動時間：</strong><br>
             ${startTime} ~ ${endTime}
@@ -139,7 +163,7 @@
         </div>
       </section>
       <div class="avia-button-wrap avia-button-right avia-builder-el-3 el_after_av_textblock avia-builder-el-last">
-        <a href="${event.eventPageUtmLink || '#'}"
+        <a href="${getField(event, 'eventPageUtmLink') || '#'}"
            class="avia-button av-mgg1j4xc-32515f019d91e1eca8a19b892c0a2b1f avia-icon_select-yes-left-icon avia-size-medium avia-position-right avia-color-theme-color"
            target="_blank"
            rel="noopener noreferrer">

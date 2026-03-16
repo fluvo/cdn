@@ -14,13 +14,37 @@
     return;
   }
 
-  // ===== 1) 依網址判斷 region =====
+  // ===== 1) 依網址判斷 region 與 language =====
   const path = location.pathname.toLowerCase();
   const region =
     path.startsWith('/tw/') ? 1 :
     path.startsWith('/jp/') ? 2 :
     path.startsWith('/hk/') ? 3 :
     1; // 預設台灣
+
+  // 語言偵測：優先讀明確的語言路徑片段，否則依 region 給預設語言
+  // 路徑結構：/{region-code}/{lang-code}/ 例如 /tw/zh-tw/ 或 /tw/en/
+  // 如需新增語言（如 /jp/ja/、/jp/en/），直接在此對應即可
+  const lang =
+    path.includes('/zh-tw/') ? 'zh-tw' :
+    path.includes('/zh-hk/') ? 'zh-hk' :
+    path.includes('/en/')    ? 'en'    :
+    path.includes('/ja/')    ? 'ja'    :
+    region === 2             ? 'ja'    : // 日本預設日文
+    region === 3             ? 'zh-hk' : // 香港預設繁中港
+    'zh-tw'; // 台灣預設繁中台
+
+  /**
+   * 從活動資料讀取指定欄位，支援新的 locales 結構與舊的 flat 結構
+   * 新格式：event.locales["zh-tw"].desktopImageLink
+   * 舊格式：event.desktopImageLink（向後相容）
+   */
+  const getField = (event, field) => {
+    if (event.locales && event.locales[lang] && event.locales[lang][field]) {
+      return event.locales[lang][field];
+    }
+    return event[field] || '';
+  };
 
   // ===== 2) 抓 DOM =====
   const bannerRoot  = document.getElementById('event-banner');
@@ -89,10 +113,10 @@
         const item = document.createElement('div');
         item.style.cssText = 'min-width: 100%; width: 100%; flex-shrink: 0;';
         item.innerHTML = `
-          <a href="${event.homeBannerUtmLink || '#'}" target="_blank" rel="noopener" style="display: block; width: 100%;">
+          <a href="${getField(event, 'homeBannerUtmLink') || '#'}" target="_blank" rel="noopener" style="display: block; width: 100%;">
             <picture>
-              <source media="(max-width: 767px)" srcset="${event.mobileImageLink || ''}">
-              <img src="${event.desktopImageLink || ''}" alt="${event.title || ''}" style="width: 100%; height: auto; display: block;" loading="eager">
+              <source media="(max-width: 767px)" srcset="${getField(event, 'mobileImageLink')}">
+              <img src="${getField(event, 'desktopImageLink')}" alt="${getField(event, 'title')}" style="width: 100%; height: auto; display: block;" loading="eager">
             </picture>
           </a>
         `;
@@ -229,13 +253,13 @@
 
         // 複製原有的 class 和屬性
         link.className = 'dropdown-link-home w-dropdown-link';
-        link.href = event.barUtmLink || '#';
+        link.href = getField(event, 'barUtmLink') || '#';
         link.target = '_blank';
         link.rel = 'noopener';
         link.tabIndex = 0;
 
         // 設置文字
-        link.textContent = event.tabName || event.title || '優惠活動';
+        link.textContent = getField(event, 'tabName') || getField(event, 'title') || '優惠活動';
 
         // 添加 hover 效果（保持原有樣式）
         link.addEventListener('mouseenter', function() {
