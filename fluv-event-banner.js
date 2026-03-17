@@ -1,7 +1,7 @@
 /**
  * Fluv Event Banner System
  * @description 活動橫幅系統 - 支援旋轉木馬、地區篩選、測試模式
- * @version 2.4.2
+ * @version 2.4.3
  * @author Fluv Team
  */
 (async function loadEventUI() {
@@ -30,12 +30,12 @@
   // 路徑結構：/{region-code}/{lang-code}/ 例如 /tw/zh-tw/ 或 /tw/en/
   // 如需新增語言（如 /jp/ja/、/jp/en/），直接在此對應即可
   const lang =
-    path.includes('/zh-tw/') ? 'zh-tw' :
-    path.includes('/zh-hk/') ? 'zh-hk' :
-    path.includes('/en/')    ? 'en'    :
-    path.includes('/ja/')    ? 'ja'    :
-    region === 2             ? 'ja'    : // 日本預設日文
-    region === 3             ? 'zh-hk' : // 香港預設繁中港
+    /\/zh-tw(\/|$)/.test(path) ? 'zh-tw' :
+    /\/zh-hk(\/|$)/.test(path) ? 'zh-hk' :
+    /\/en(\/|$)/.test(path)    ? 'en'    :
+    /\/ja(\/|$)/.test(path)    ? 'ja'    :
+    region === 2               ? 'ja'    : // 日本預設日文
+    region === 3               ? 'zh-hk' : // 香港預設繁中港
     'zh-tw'; // 台灣預設繁中台
 
   /**
