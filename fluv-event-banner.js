@@ -1,17 +1,20 @@
 /**
  * Fluv Event Banner System
  * @description 活動橫幅系統 - 支援旋轉木馬、地區篩選、測試模式
- * @version 2.4.1
+ * @version 2.4.2
  * @author Fluv Team
  */
 (async function loadEventUI() {
   // ===== 0) 環境判斷 =====
-  // staging 域名（orangeisfat.fluv.com）或帶 ?test 參數時才執行
+  // 允許執行的域名：正式環境、staging、或帶 ?test 參數
   const urlParams = new URLSearchParams(window.location.search);
   const isTestMode = urlParams.has('test');
-  const isStagingDomain = location.hostname === 'orangeisfat.fluv.com';
+  const isAllowedDomain = [
+    'www.fluv.com',
+    'orangeisfat.fluv.com',
+  ].includes(location.hostname);
 
-  if (!isTestMode && !isStagingDomain) {
+  if (!isTestMode && !isAllowedDomain) {
     return;
   }
 
