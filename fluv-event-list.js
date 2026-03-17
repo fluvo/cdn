@@ -1,7 +1,7 @@
 /**
  * Fluv Event List System (WordPress)
  * @description 活動列表系統 - 支援選單更新（所有頁面）、活動卡片顯示（event-list 頁面）、地區篩選
- * @version 2.3.0
+ * @version 2.4.0
  * @author Fluv Team
  */
 (async function loadEventList() {
