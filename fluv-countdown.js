@@ -93,6 +93,10 @@
       var labelColor = styles.labelColor || '#666666';
       var separatorColor = styles.separatorColor || '#999999';
       var digitBackground = styles.digitBackground || '#f5f5f5';
+      var boxShadow = styles.boxShadow || 'none';
+      var headlineGap = styles.headlineGap || '12';
+      var letterSpacing = styles.letterSpacing || '0';
+      var digitGap = styles.digitGap || '8';
 
       // 動畫 CSS
       var animationCss = '';
@@ -116,7 +120,9 @@
         bgStyle +
         'border-radius:' + borderRadius + ';' +
         'padding:' + padding + ';' +
-        'box-sizing:border-box;';
+        'box-sizing:border-box;' +
+        'box-shadow:' + boxShadow + ';' +
+        'letter-spacing:' + letterSpacing + 'px;';
 
       // ===== 10) 響應式樣式 =====
       var responsiveId = 'fluv-cd-responsive-' + countdownId;
@@ -132,15 +138,15 @@
             '.fluv-cd-digit-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.6) + 'px;padding:16px 24px;min-width:80px;}' +
             '.fluv-cd-label-' + countdownId + '{font-size:16px;}' +
             '.fluv-cd-sep-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.6) + 'px;padding-top:16px;}' +
-            '.fluv-cd-headline-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.4) + 'px;margin-bottom:16px;}' +
-            '.fluv-cd-digits-' + countdownId + '{gap:16px;}' +
+            '.fluv-cd-headline-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.4) + 'px;margin-bottom:' + headlineGap + 'px;}' +
+            '.fluv-cd-digits-' + countdownId + '{gap:' + digitGap + 'px;}' +
           '}' +
           '@media(max-width:767px){' +
             '.fluv-cd-digit-' + countdownId + '{font-size:' + fontSize + ';padding:8px 12px;min-width:48px;}' +
             '.fluv-cd-label-' + countdownId + '{font-size:12px;}' +
             '.fluv-cd-sep-' + countdownId + '{font-size:' + fontSize + ';padding-top:8px;}' +
-            '.fluv-cd-headline-' + countdownId + '{font-size:' + fontSize + ';margin-bottom:12px;}' +
-            '.fluv-cd-digits-' + countdownId + '{gap:8px;}' +
+            '.fluv-cd-headline-' + countdownId + '{font-size:' + fontSize + ';margin-bottom:' + headlineGap + 'px;}' +
+            '.fluv-cd-digits-' + countdownId + '{gap:' + digitGap + 'px;}' +
           '}';
         document.head.appendChild(respStyle);
       }
