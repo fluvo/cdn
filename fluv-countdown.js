@@ -121,7 +121,6 @@
         'border-radius:' + borderRadius + ';' +
         'padding:' + padding + ';' +
         'box-sizing:border-box;' +
-        'text-shadow:' + textShadow + ';' +
         'letter-spacing:' + letterSpacing + 'px;';
 
       // ===== 10) 響應式樣式 =====
@@ -130,10 +129,10 @@
         var respStyle = document.createElement('style');
         respStyle.id = responsiveId;
         respStyle.textContent =
-          '.fluv-cd-digit-' + countdownId + '{background:' + digitBackground + ';color:' + color + ';font-weight:bold;border-radius:8px;text-align:center;line-height:1.2;' + animationCss + '}' +
-          '.fluv-cd-label-' + countdownId + '{color:' + labelColor + ';font-weight:500;}' +
-          '.fluv-cd-sep-' + countdownId + '{color:' + separatorColor + ';font-weight:bold;}' +
-          '.fluv-cd-headline-' + countdownId + '{color:' + color + ';font-weight:bold;}' +
+          '.fluv-cd-digit-' + countdownId + '{background:' + digitBackground + ';color:' + color + ';font-weight:bold;border-radius:8px;text-align:center;line-height:1.2;text-shadow:' + textShadow + ';' + animationCss + '}' +
+          '.fluv-cd-label-' + countdownId + '{color:' + labelColor + ';font-weight:500;text-shadow:' + textShadow + ';}' +
+          '.fluv-cd-sep-' + countdownId + '{color:' + separatorColor + ';font-weight:bold;text-shadow:' + textShadow + ';}' +
+          '.fluv-cd-headline-' + countdownId + '{color:' + color + ';font-weight:bold;text-shadow:' + textShadow + ';}' +
           '@media(min-width:768px){' +
             '.fluv-cd-digit-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.6) + 'px;padding:16px 24px;min-width:80px;}' +
             '.fluv-cd-label-' + countdownId + '{font-size:16px;}' +
