@@ -93,7 +93,7 @@
       var labelColor = styles.labelColor || '#666666';
       var separatorColor = styles.separatorColor || '#999999';
       var digitBackground = styles.digitBackground || '#f5f5f5';
-      var boxShadow = styles.boxShadow || 'none';
+      var textShadow = styles.textShadow || 'none';
       var headlineGap = styles.headlineGap || '12';
       var letterSpacing = styles.letterSpacing || '0';
       var digitGap = styles.digitGap || '8';
@@ -121,7 +121,7 @@
         'border-radius:' + borderRadius + ';' +
         'padding:' + padding + ';' +
         'box-sizing:border-box;' +
-        'box-shadow:' + boxShadow + ';' +
+        'text-shadow:' + textShadow + ';' +
         'letter-spacing:' + letterSpacing + 'px;';
 
       // ===== 10) 響應式樣式 =====
