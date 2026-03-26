@@ -118,35 +118,51 @@
         'padding:' + padding + ';' +
         'box-sizing:border-box;';
 
-      // ===== 10) 建立 digit group =====
+      // ===== 10) 響應式樣式 =====
+      var responsiveId = 'fluv-cd-responsive-' + countdownId;
+      if (!document.getElementById(responsiveId)) {
+        var respStyle = document.createElement('style');
+        respStyle.id = responsiveId;
+        respStyle.textContent =
+          '.fluv-cd-digit-' + countdownId + '{background:' + digitBackground + ';color:' + color + ';font-weight:bold;border-radius:8px;text-align:center;line-height:1.2;' + animationCss + '}' +
+          '.fluv-cd-label-' + countdownId + '{color:' + labelColor + ';font-weight:500;}' +
+          '.fluv-cd-sep-' + countdownId + '{color:' + separatorColor + ';font-weight:bold;}' +
+          '.fluv-cd-headline-' + countdownId + '{color:' + color + ';font-weight:bold;}' +
+          '@media(min-width:768px){' +
+            '.fluv-cd-digit-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.6) + 'px;padding:16px 24px;min-width:80px;}' +
+            '.fluv-cd-label-' + countdownId + '{font-size:16px;}' +
+            '.fluv-cd-sep-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.6) + 'px;padding-top:16px;}' +
+            '.fluv-cd-headline-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.4) + 'px;margin-bottom:16px;}' +
+            '.fluv-cd-digits-' + countdownId + '{gap:16px;}' +
+          '}' +
+          '@media(max-width:767px){' +
+            '.fluv-cd-digit-' + countdownId + '{font-size:' + fontSize + ';padding:8px 12px;min-width:48px;}' +
+            '.fluv-cd-label-' + countdownId + '{font-size:12px;}' +
+            '.fluv-cd-sep-' + countdownId + '{font-size:' + fontSize + ';padding-top:8px;}' +
+            '.fluv-cd-headline-' + countdownId + '{font-size:' + fontSize + ';margin-bottom:12px;}' +
+            '.fluv-cd-digits-' + countdownId + '{gap:8px;}' +
+          '}';
+        document.head.appendChild(respStyle);
+      }
+
+      // ===== 11) 建立 digit group =====
       var createGroup = function (id, label) {
         return (
           '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">' +
-            '<div id="fluv-cd-' + countdownId + '-' + id + '" style="' +
-              'background:' + digitBackground + ';' +
-              'color:' + color + ';' +
-              'font-size:' + fontSize + ';' +
-              'font-weight:bold;' +
-              'border-radius:6px;' +
-              'padding:8px 12px;' +
-              'min-width:48px;' +
-              'text-align:center;' +
-              'line-height:1.2;' +
-              animationCss +
-            '">00</div>' +
-            '<span style="font-size:12px;color:' + labelColor + ';font-weight:500;">' + label + '</span>' +
+            '<div id="fluv-cd-' + countdownId + '-' + id + '" class="fluv-cd-digit-' + countdownId + '">00</div>' +
+            '<span class="fluv-cd-label-' + countdownId + '">' + label + '</span>' +
           '</div>'
         );
       };
 
-      var separator = '<span style="font-size:' + fontSize + ';color:' + separatorColor + ';font-weight:bold;align-self:flex-start;padding-top:8px;">:</span>';
+      var separator = '<span class="fluv-cd-sep-' + countdownId + '" style="align-self:flex-start;">:</span>';
 
       var headlineHtml = headline
-        ? '<div style="color:' + color + ';font-size:' + fontSize + ';font-weight:bold;margin-bottom:12px;">' + headline + '</div>'
+        ? '<div class="fluv-cd-headline-' + countdownId + '">' + headline + '</div>'
         : '';
 
       var digitsHtml =
-        '<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">' +
+        '<div class="fluv-cd-digits-' + countdownId + '" style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;">' +
         createGroup('d', labelDay) + separator +
         createGroup('h', labelHour) + separator +
         createGroup('m', labelMin) + separator +
