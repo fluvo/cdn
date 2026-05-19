@@ -29,14 +29,66 @@
   if (!targetDiv) return;
 
   // ===== 4) 注入動畫 keyframes（每頁只注入一次）=====
+  // Both digit keyframes (fluv-cd-*) and CTA keyframes (fluv-cta-*) live
+  // in the same <style> so we don't need to manage two registrations.
   if (!document.getElementById('fluv-countdown-animations')) {
     var styleEl = document.createElement('style');
     styleEl.id = 'fluv-countdown-animations';
     styleEl.textContent =
       '@keyframes fluv-cd-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}' +
-      '@keyframes fluv-cd-flip{0%{transform:rotateX(0)}50%{transform:rotateX(-90deg)}51%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}';
+      '@keyframes fluv-cd-flip{0%{transform:rotateX(0)}50%{transform:rotateX(-90deg)}51%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}' +
+      '@keyframes fluv-cta-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}' +
+      '@keyframes fluv-cta-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}' +
+      '@keyframes fluv-cta-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}' +
+      '@keyframes fluv-cta-wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}' +
+      '@keyframes fluv-cta-glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}';
     document.head.appendChild(styleEl);
   }
+
+  // ===== 4.1) HTML escape helper + CTA preset table =====
+  // Keep this in sync with the admin (list-countdown.js CTA_PRESETS).
+  var escapeHtml = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  };
+
+  var CTA_PRESETS = {
+    'solid-pink':    'background:#FF6B9D;color:#fff;border:none;border-radius:6px;font-weight:bold;box-shadow:0 2px 6px rgba(255,107,157,0.35);',
+    'solid-red':     'background:#E63946;color:#fff;border:none;border-radius:6px;font-weight:bold;box-shadow:0 2px 6px rgba(230,57,70,0.35);',
+    'solid-orange':  'background:#FF8C42;color:#fff;border:none;border-radius:6px;font-weight:bold;box-shadow:0 2px 6px rgba(255,140,66,0.35);',
+    'gradient-warm': 'background:linear-gradient(45deg,#FF6B9D,#FFC371);color:#fff;border:none;border-radius:6px;font-weight:bold;box-shadow:0 2px 8px rgba(255,107,157,0.35);',
+    'outline-dark':  'background:transparent;color:#222;border:2px solid #222;border-radius:6px;font-weight:bold;',
+    'pill-black':    'background:#111;color:#fff;border:none;border-radius:999px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,0.25);'
+  };
+
+  var CTA_ANIMATIONS = {
+    shake:  'animation:fluv-cta-shake 0.8s ease-in-out infinite;',
+    pulse:  'animation:fluv-cta-pulse 1.2s ease-in-out infinite;',
+    bounce: 'animation:fluv-cta-bounce 1s ease-in-out infinite;',
+    wobble: 'animation:fluv-cta-wobble 1s ease-in-out infinite;',
+    glow:   'animation:fluv-cta-glow 1.5s ease-in-out infinite;'
+  };
+
+  var CTA_PLACEHOLDER = '{點我}';
+
+  // Build the CTA <a> string from a cta object. Returns '' if disabled.
+  var buildCtaHtml = function (cta) {
+    if (!cta || !cta.enabled || !cta.text) return '';
+    var preset = CTA_PRESETS[cta.preset] || CTA_PRESETS['solid-pink'];
+    var anim = CTA_ANIMATIONS[cta.animation] || '';
+    var base = 'display:inline-block;padding:8px 18px;margin:0 4px;font-size:14px;line-height:1.2;text-decoration:none;cursor:pointer;white-space:nowrap;vertical-align:middle;';
+    var href = cta.url ? escapeHtml(cta.url) : '#';
+    return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" style="' + base + preset + anim + '">' + escapeHtml(cta.text) + '</a>';
+  };
+
+  // Wrap a chunk of headline text as either a link or a plain span.
+  var wrapHeadlineChunk = function (text, url) {
+    if (!text) return '';
+    var safe = escapeHtml(text);
+    if (!url) return '<span>' + safe + '</span>';
+    return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">' + safe + '</a>';
+  };
 
   // ===== 5) Fetch 倒數資料 =====
   fetch(apiBase + '/countdown?id=' + encodeURIComponent(countdownId))
@@ -106,8 +158,29 @@
         animationCss = 'animation:fluv-cd-flip 0.6s ease-in-out;';
       }
 
-      // ===== 8) 文案 =====
+      // ===== 8) 文案 + 連結 + CTA 按鈕 =====
       var headline = cd.headline || '';
+      var headlineUrl = cd.headlineUrl || '';
+      var cta = cd.cta || null;
+      var ctaHtml = buildCtaHtml(cta);
+
+      // If CTA enabled AND headline contains {點我}, inline the button at
+      // that position. Otherwise the button (if any) gets appended after
+      // the digits in step 11.
+      var headlineInner;
+      var ctaInlined = false;
+      if (ctaHtml && headline.indexOf(CTA_PLACEHOLDER) >= 0) {
+        var idx = headline.indexOf(CTA_PLACEHOLDER);
+        var before = headline.slice(0, idx);
+        var after = headline.slice(idx + CTA_PLACEHOLDER.length);
+        headlineInner =
+          wrapHeadlineChunk(before, headlineUrl) +
+          ctaHtml +
+          wrapHeadlineChunk(after, headlineUrl);
+        ctaInlined = true;
+      } else {
+        headlineInner = wrapHeadlineChunk(headline, headlineUrl);
+      }
 
       // ===== 9) 容器樣式 =====
       var bgStyle = backgroundImage
@@ -162,8 +235,8 @@
 
       var separator = '<span class="fluv-cd-sep-' + countdownId + '" style="align-self:flex-start;">:</span>';
 
-      var headlineHtml = headline
-        ? '<div class="fluv-cd-headline-' + countdownId + '">' + headline + '</div>'
+      var headlineHtml = headlineInner
+        ? '<div class="fluv-cd-headline-' + countdownId + '">' + headlineInner + '</div>'
         : '';
 
       var digitsHtml =
@@ -174,7 +247,13 @@
         createGroup('s', labelSec) +
         '</div>';
 
-      targetDiv.innerHTML = headlineHtml + digitsHtml;
+      // If CTA exists but wasn't inlined into the headline, place it
+      // beneath the digits as its own row.
+      var ctaBelowHtml = (ctaHtml && !ctaInlined)
+        ? '<div style="text-align:center;margin-top:12px;">' + ctaHtml + '</div>'
+        : '';
+
+      targetDiv.innerHTML = headlineHtml + digitsHtml + ctaBelowHtml;
 
       // 取得 digit 元素
       var elD = document.getElementById('fluv-cd-' + countdownId + '-d');
