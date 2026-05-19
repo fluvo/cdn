@@ -118,9 +118,12 @@
     showReopenButton();
   };
 
+  // Strict test mode: URL must carry ONLY ?test=true and no other params.
+  // Anything else (utm_source, fbclid, email_id, typos…) is treated as a
+  // regular visit so production users never see preview/draft popups.
   const isTestMode = () => {
     const params = new URLSearchParams(window.location.search);
-    return params.has('test') || params.size === 1;
+    return params.size === 1 && params.get('test') === 'true';
   };
 
   // 根據網址路徑判斷地區

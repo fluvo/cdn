@@ -79,17 +79,22 @@ Fluv 平台的前端資源 CDN 倉庫，透過 jsDelivr 或 GitHub Pages 提供�
 ```
 
 ### 測試模式
-在網址加上任意查詢參數即可啟用測試模式：
+**URL 必須只有 `?test=true` 這一個 query string**，且沒有其他任何參數，才會觸發測試模式：
 
 ```
-https://example.com/?test
-https://example.com/?debug
-https://example.com/?preview
+✅ https://example.com/?test=true             # 觸發
+❌ https://example.com/?test=true&utm_source=fb # 不觸發（有其他參數）
+❌ https://example.com/?utm_source=fb          # 不觸發
+❌ https://example.com/?djfsodf=123            # 不觸發
+❌ https://example.com/?debug                  # 不觸發
 ```
+
+嚴格條件是為了避免正常用戶帶 UTM / fbclid / gclid / email_id 等 tracking 參數時誤觸測試模式，看到未啟用或預覽中的 popup。
 
 測試模式特性：
-- 忽略 Cookie 檢查
-- 顯示所有已啟用的 popup（包含未開始和已過期的）
+- 忽略 localStorage 顯示控制
+- 顯示尚未啟用 (`isActive: false`) 或排程未開始 (`startAt > now`) 的 popup（方便預覽）
+- **已過期 (`expiredAt < now`) 的 popup 不會顯示**（即使在測試模式，後端 API 也會過濾掉）
 - Console 會顯示 popup 資料
 
 ### 地區偵測
