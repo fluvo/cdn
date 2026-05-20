@@ -196,44 +196,37 @@
         'box-sizing:border-box;' +
         'letter-spacing:' + letterSpacing + 'px;';
 
-      // ===== 10) 響應式樣式 =====
+      // ===== 10) 樣式（WYSIWYG，桌機/手機尺寸一致） =====
+      // 改動歷史：原本桌機把字放大 1.4x / 1.6x，但 admin 預覽沒放大，
+      // 造成「預覽看到 24px、線上桌機看到 38px」這種錯位。改成兩邊都直接
+      // 使用 admin 選的 fontSize；要更大就調 fontSize，要更小就調小。
+      //
+      // 另外，天/時/分/秒 label 改放在白色 digit box 內（跟預覽一致）。
       var responsiveId = 'fluv-cd-responsive-' + countdownId;
       if (!document.getElementById(responsiveId)) {
         var respStyle = document.createElement('style');
         respStyle.id = responsiveId;
         respStyle.textContent =
-          '.fluv-cd-digit-' + countdownId + '{background:' + digitBackground + ';color:' + color + ';font-weight:bold;border-radius:8px;text-align:center;line-height:1.2;text-shadow:' + textShadow + ';' + animationCss + '}' +
-          '.fluv-cd-label-' + countdownId + '{color:' + labelColor + ';font-weight:500;text-shadow:' + textShadow + ';}' +
-          '.fluv-cd-sep-' + countdownId + '{color:' + separatorColor + ';font-weight:bold;text-shadow:' + textShadow + ';}' +
-          '.fluv-cd-headline-' + countdownId + '{color:' + color + ';font-weight:bold;text-shadow:' + textShadow + ';}' +
-          '@media(min-width:768px){' +
-            '.fluv-cd-digit-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.6) + 'px;padding:16px 24px;min-width:80px;}' +
-            '.fluv-cd-label-' + countdownId + '{font-size:16px;}' +
-            '.fluv-cd-sep-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.6) + 'px;padding-top:16px;}' +
-            '.fluv-cd-headline-' + countdownId + '{font-size:' + (parseFloat(fontSize) * 1.4) + 'px;margin-bottom:' + headlineGap + 'px;}' +
-            '.fluv-cd-digits-' + countdownId + '{gap:' + digitGap + 'px;}' +
-          '}' +
-          '@media(max-width:767px){' +
-            '.fluv-cd-digit-' + countdownId + '{font-size:' + fontSize + ';padding:8px 12px;min-width:48px;}' +
-            '.fluv-cd-label-' + countdownId + '{font-size:12px;}' +
-            '.fluv-cd-sep-' + countdownId + '{font-size:' + fontSize + ';padding-top:8px;}' +
-            '.fluv-cd-headline-' + countdownId + '{font-size:' + fontSize + ';margin-bottom:' + headlineGap + 'px;}' +
-            '.fluv-cd-digits-' + countdownId + '{gap:' + digitGap + 'px;}' +
-          '}';
+          '.fluv-cd-digit-' + countdownId + '{background:' + digitBackground + ';color:' + color + ';font-weight:bold;border-radius:4px;text-align:center;line-height:1.2;text-shadow:' + textShadow + ';font-size:' + fontSize + ';padding:8px 12px;min-width:48px;display:inline-flex;flex-direction:column;align-items:center;gap:2px;' + animationCss + '}' +
+          '.fluv-cd-label-' + countdownId + '{color:' + labelColor + ';font-weight:normal;text-shadow:' + textShadow + ';font-size:10px;}' +
+          '.fluv-cd-sep-' + countdownId + '{color:' + separatorColor + ';font-weight:bold;text-shadow:' + textShadow + ';font-size:' + fontSize + ';}' +
+          '.fluv-cd-headline-' + countdownId + '{color:' + color + ';font-weight:bold;text-shadow:' + textShadow + ';font-size:' + fontSize + ';margin-bottom:' + headlineGap + 'px;}' +
+          '.fluv-cd-digits-' + countdownId + '{gap:' + digitGap + 'px;}';
         document.head.appendChild(respStyle);
       }
 
       // ===== 11) 建立 digit group =====
+      // Label sits INSIDE the white box (matches admin preview).
       var createGroup = function (id, label) {
         return (
-          '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">' +
-            '<div id="fluv-cd-' + countdownId + '-' + id + '" class="fluv-cd-digit-' + countdownId + '">00</div>' +
+          '<div id="fluv-cd-' + countdownId + '-' + id + '" class="fluv-cd-digit-' + countdownId + '">' +
+            '<span>00</span>' +
             '<span class="fluv-cd-label-' + countdownId + '">' + label + '</span>' +
           '</div>'
         );
       };
 
-      var separator = '<span class="fluv-cd-sep-' + countdownId + '" style="align-self:flex-start;">:</span>';
+      var separator = '<span class="fluv-cd-sep-' + countdownId + '">:</span>';
 
       var headlineHtml = headlineInner
         ? '<div class="fluv-cd-headline-' + countdownId + '">' + headlineInner + '</div>'
@@ -255,11 +248,17 @@
 
       targetDiv.innerHTML = headlineHtml + digitsHtml + ctaBelowHtml;
 
-      // 取得 digit 元素
-      var elD = document.getElementById('fluv-cd-' + countdownId + '-d');
-      var elH = document.getElementById('fluv-cd-' + countdownId + '-h');
-      var elM = document.getElementById('fluv-cd-' + countdownId + '-m');
-      var elS = document.getElementById('fluv-cd-' + countdownId + '-s');
+      // 取得 digit 數字 span（label 在同一個 box 內，不能用 textContent
+      // 直接寫整個 box，會把 label 一併蓋掉）
+      var pickNumSpan = function (id) {
+        var box = document.getElementById('fluv-cd-' + countdownId + '-' + id);
+        return box ? box.firstElementChild : null;
+      };
+      var elD = pickNumSpan('d');
+      var elH = pickNumSpan('h');
+      var elM = pickNumSpan('m');
+      var elS = pickNumSpan('s');
+      var elSBox = document.getElementById('fluv-cd-' + countdownId + '-s');
 
       // ===== 10) 更新倒數 =====
       var pad = function (n) { return n < 10 ? '0' + n : String(n); };
@@ -287,12 +286,12 @@
         if (elS) {
           elS.textContent = pad(s);
 
-          // flip 動畫：每秒觸發
-          if (animation === 'flip' && s !== prevS) {
-            elS.style.animation = 'none';
+          // flip 動畫：每秒觸發（套在外層 box）
+          if (animation === 'flip' && s !== prevS && elSBox) {
+            elSBox.style.animation = 'none';
             // 強制 reflow
-            void elS.offsetHeight;
-            elS.style.animation = 'fluv-cd-flip 0.6s ease-in-out';
+            void elSBox.offsetHeight;
+            elSBox.style.animation = 'fluv-cd-flip 0.6s ease-in-out';
           }
         }
         prevS = s;
