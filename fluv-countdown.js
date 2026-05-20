@@ -126,6 +126,13 @@
     .then(function (data) {
       var cd = data.data || data;
       if (!cd) return;
+      // Hide if admin disabled it. Backend is supposed to 404 on non-active
+      // ids, but we double-check client-side in case of edge cases (admin
+      // toggles status while the page is open, stale cache, etc.).
+      if (cd.status && cd.status !== 'active') {
+        targetDiv.style.display = 'none';
+        return;
+      }
 
       // ===== 6) 計算剩餘秒數 =====
       var getRemainingSeconds = function () {
