@@ -149,6 +149,7 @@
       var headlineGap = styles.headlineGap || '12';
       var letterSpacing = styles.letterSpacing || '0';
       var digitGap = styles.digitGap || '8';
+      var lineHeight = styles.lineHeight || '1.4';
 
       // 動畫 CSS
       var animationCss = '';
@@ -210,7 +211,7 @@
           '.fluv-cd-digit-' + countdownId + '{background:' + digitBackground + ';color:' + color + ';font-weight:bold;border-radius:4px;text-align:center;line-height:1.2;text-shadow:' + textShadow + ';font-size:' + fontSize + ';padding:8px 12px;min-width:48px;display:inline-flex;flex-direction:column;align-items:center;gap:2px;' + animationCss + '}' +
           '.fluv-cd-label-' + countdownId + '{color:' + labelColor + ';font-weight:normal;text-shadow:' + textShadow + ';font-size:10px;}' +
           '.fluv-cd-sep-' + countdownId + '{color:' + separatorColor + ';font-weight:bold;text-shadow:' + textShadow + ';font-size:' + fontSize + ';}' +
-          '.fluv-cd-headline-' + countdownId + '{color:' + color + ';font-weight:bold;text-shadow:' + textShadow + ';font-size:' + fontSize + ';margin-bottom:' + headlineGap + 'px;}' +
+          '.fluv-cd-headline-' + countdownId + '{color:' + color + ';font-weight:bold;text-shadow:' + textShadow + ';font-size:' + fontSize + ';line-height:' + lineHeight + ';margin-bottom:' + headlineGap + 'px;}' +
           '.fluv-cd-digits-' + countdownId + '{gap:' + digitGap + 'px;}';
         document.head.appendChild(respStyle);
       }
