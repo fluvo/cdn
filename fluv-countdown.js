@@ -16,6 +16,11 @@
   var match = src.match(/[?&]id=([^&]+)/);
   if (!match) return;
   var countdownId = match[1];
+  // Security: only allow safe id chars to prevent CSS/HTML attribute breakout.
+  // MongoDB ObjectId is 24-hex; we accept any alphanumeric/dash/underscore up
+  // to 64 chars to leave headroom for future ID schemes without losing the
+  // safety guarantee. A bad id silently aborts — never inject into DOM/CSS.
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(countdownId)) return;
 
   // ===== 2) 環境判斷 =====
   var hostname = window.location.hostname;
@@ -53,6 +58,20 @@
     });
   };
 
+  // Security: URL protocol whitelist. We render admin-supplied URLs into
+  // <a href>; without this check a malicious admin could store
+  // `javascript:alert(1)` and turn the link into stored XSS on every
+  // partner site that embeds the countdown. Allowed: absolute http(s),
+  // mailto, tel, and root-relative paths. Everything else → empty (link
+  // not rendered).
+  var sanitizeUrl = function (url) {
+    if (!url) return '';
+    var s = String(url).trim();
+    if (!s) return '';
+    if (/^(https?:\/\/|mailto:|tel:|\/[^\/])/i.test(s)) return s;
+    return '';
+  };
+
   var CTA_PRESETS = {
     'solid-pink':    'background:#FF6B9D;color:#fff;border:none;border-radius:6px;font-weight:bold;box-shadow:0 2px 6px rgba(255,107,157,0.35);',
     'solid-red':     'background:#E63946;color:#fff;border:none;border-radius:6px;font-weight:bold;box-shadow:0 2px 6px rgba(230,57,70,0.35);',
@@ -73,21 +92,29 @@
   var CTA_PLACEHOLDER = '{點我}';
 
   // Build the CTA <a> string from a cta object. Returns '' if disabled.
+  // URL is run through sanitizeUrl — if rejected, the button renders as
+  // a non-link span (still styled like the button, just not clickable).
   var buildCtaHtml = function (cta) {
     if (!cta || !cta.enabled || !cta.text) return '';
     var preset = CTA_PRESETS[cta.preset] || CTA_PRESETS['solid-pink'];
     var anim = CTA_ANIMATIONS[cta.animation] || '';
     var base = 'display:inline-block;padding:8px 18px;margin:0 4px;font-size:14px;line-height:1.2;text-decoration:none;cursor:pointer;white-space:nowrap;vertical-align:middle;';
-    var href = cta.url ? escapeHtml(cta.url) : '#';
-    return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" style="' + base + preset + anim + '">' + escapeHtml(cta.text) + '</a>';
+    var safeUrl = sanitizeUrl(cta.url);
+    var safeText = escapeHtml(cta.text);
+    if (!safeUrl) {
+      return '<span style="' + base + preset + anim + '">' + safeText + '</span>';
+    }
+    return '<a href="' + escapeHtml(safeUrl) + '" target="_blank" rel="noopener noreferrer" style="' + base + preset + anim + '">' + safeText + '</a>';
   };
 
-  // Wrap a chunk of headline text as either a link or a plain span.
+  // Wrap a chunk of headline text as either a link or a plain span. URL is
+  // sanitized; a rejected URL falls back to plain span (no underline).
   var wrapHeadlineChunk = function (text, url) {
     if (!text) return '';
     var safe = escapeHtml(text);
-    if (!url) return '<span>' + safe + '</span>';
-    return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">' + safe + '</a>';
+    var safeUrl = sanitizeUrl(url);
+    if (!safeUrl) return '<span>' + safe + '</span>';
+    return '<a href="' + escapeHtml(safeUrl) + '" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">' + safe + '</a>';
   };
 
   // ===== 5) Fetch 倒數資料 =====
