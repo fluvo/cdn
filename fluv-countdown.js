@@ -9,18 +9,27 @@
  *   <script src="https://cdn.fluv.com/fluv-countdown.js?id={COUNTDOWN_ID}"></script>
  */
 (function () {
-  // ===== 1) 從 script src 取得 ID =====
+  // ===== 1) 解析 script src 的參數 =====
+  // 支援兩種模式：
+  //   Auto:    <div id="fluv-countdown"></div>
+  //            <script src=".../fluv-countdown.js?region=1"></script>
+  //            → 自動抓「目前啟用 + 還沒結束」的倒數，倒數結束自動消失。
+  //            一次貼上、之後在 admin 開關活動就好。
+  //   Legacy:  <div id="fluv-countdown-{id}"></div>
+  //            <script src=".../fluv-countdown.js?id={id}"></script>
+  //            → 綁定特定倒數，跟舊版相容。
   var scripts = document.getElementsByTagName('script');
   var currentScript = scripts[scripts.length - 1];
   var src = currentScript.getAttribute('src') || '';
-  var match = src.match(/[?&]id=([^&]+)/);
-  if (!match) return;
-  var countdownId = match[1];
-  // Security: only allow safe id chars to prevent CSS/HTML attribute breakout.
-  // MongoDB ObjectId is 24-hex; we accept any alphanumeric/dash/underscore up
-  // to 64 chars to leave headroom for future ID schemes without losing the
-  // safety guarantee. A bad id silently aborts — never inject into DOM/CSS.
-  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(countdownId)) return;
+  var idMatch = src.match(/[?&]id=([^&]+)/);
+  var regionMatch = src.match(/[?&]region=([^&]+)/);
+  var idFromSrc = idMatch ? idMatch[1] : null;
+  var region = regionMatch ? regionMatch[1] : '1';
+
+  // Security: only allow safe chars to prevent CSS/HTML attribute breakout.
+  // Bad id/region → silently abort before any DOM/CSS injection.
+  if (idFromSrc && !/^[a-zA-Z0-9_-]{1,64}$/.test(idFromSrc)) return;
+  if (!/^[0-9]{1,3}$/.test(region)) return;
 
   // ===== 2) 環境判斷 =====
   var hostname = window.location.hostname;
@@ -30,7 +39,11 @@
       : 'https://api-prod.fluv.com';
 
   // ===== 3) 找到目標 div =====
-  var targetDiv = document.getElementById('fluv-countdown-' + countdownId);
+  // Auto mode looks for the generic `#fluv-countdown`. Legacy mode keeps
+  // the id-suffixed one for backwards compat.
+  var targetDiv = idFromSrc
+    ? document.getElementById('fluv-countdown-' + idFromSrc)
+    : document.getElementById('fluv-countdown');
   if (!targetDiv) return;
 
   // ===== 4) 注入動畫 keyframes（每頁只注入一次）=====
@@ -118,18 +131,37 @@
   };
 
   // ===== 5) Fetch 倒數資料 =====
-  fetch(apiBase + '/countdown?id=' + encodeURIComponent(countdownId))
+  // Auto mode: GET /countdown?region=X → array of active+running countdowns
+  // sorted by createdAt desc. Take [0].
+  // Legacy mode: GET /countdown?id=X → single object (or 404 if inactive).
+  var fetchUrl = idFromSrc
+    ? apiBase + '/countdown?id=' + encodeURIComponent(idFromSrc)
+    : apiBase + '/countdown?region=' + encodeURIComponent(region);
+
+  fetch(fetchUrl)
     .then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
     })
     .then(function (data) {
-      var cd = data.data || data;
-      if (!cd) return;
-      // Hide if admin disabled it. Backend is supposed to 404 on non-active
-      // ids, but we double-check client-side in case of edge cases (admin
-      // toggles status while the page is open, stale cache, etc.).
+      var payload = data.data;
+      // Auto mode → array; pick most recent. Legacy mode → object.
+      var cd = Array.isArray(payload) ? payload[0] : (payload || data);
+      if (!cd) {
+        targetDiv.style.display = 'none';
+        return;
+      }
+      // Hide if admin disabled it. Backend is supposed to filter, but we
+      // double-check client-side in case of edge cases (admin toggles
+      // status while the page is open, stale cache, etc.).
       if (cd.status && cd.status !== 'active') {
+        targetDiv.style.display = 'none';
+        return;
+      }
+      // Use the actual record _id for class/element IDs. Backend gives us
+      // a trusted Mongo ObjectId but we still regex-check before injecting.
+      var countdownId = String(cd._id || '');
+      if (!/^[a-zA-Z0-9_-]{1,64}$/.test(countdownId)) {
         targetDiv.style.display = 'none';
         return;
       }
